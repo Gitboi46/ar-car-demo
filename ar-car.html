@@ -1,0 +1,607 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Marker-based AR — Interactive Car</title>
+
+    <!-- A-Frame -->
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+
+    <!-- AR.js (for marker-based tracking) -->
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        font-family: Arial, sans-serif;
+      }
+
+      #note {
+        position: absolute;
+        left: 8px;
+        top: 8px;
+        z-index: 2;
+        background: rgba(0, 0, 0, 0.65);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-size: 13px;
+      }
+
+      #controls {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 2;
+        background: rgba(0, 0, 0, 0.8);
+        padding: 15px 20px;
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-width: 280px;
+        max-width: 90vw;
+      }
+
+      .control-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .control-group label {
+        color: white;
+        font-size: 14px;
+        min-width: 80px;
+      }
+
+      .color-btn {
+        width: 40px;
+        height: 40px;
+        border: 2px solid white;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: transform 0.2s;
+      }
+
+      .color-btn:active {
+        transform: scale(0.95);
+      }
+
+      .color-btn.active {
+        border: 3px solid #4CAF50;
+        box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+      }
+
+      .toggle-btn {
+        background: #2196F3;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: bold;
+        transition: background 0.3s;
+        flex: 1;
+        min-width: 120px;
+      }
+
+      .toggle-btn:active {
+        transform: scale(0.98);
+      }
+
+      .toggle-btn.active {
+        background: #FFC107;
+        color: black;
+      }
+
+      .color-options {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .button-row {
+        display: flex;
+        gap: 8px;
+        width: 100%;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="note">
+      📷 Point your camera at the <strong>Car Marker</strong>. <br />
+      Allow camera access when prompted.
+    </div>
+
+    <div id="controls">
+      <div class="control-group">
+        <label>Car Color:</label>
+        <div class="color-options">
+          <button class="color-btn active" style="background: #e74c3c;" data-color="#e74c3c"></button>
+          <button class="color-btn" style="background: #3498db;" data-color="#3498db"></button>
+          <button class="color-btn" style="background: #2ecc71;" data-color="#2ecc71"></button>
+          <button class="color-btn" style="background: #f39c12;" data-color="#f39c12"></button>
+          <button class="color-btn" style="background: #9b59b6;" data-color="#9b59b6"></button>
+          <button class="color-btn" style="background: #1abc9c;" data-color="#1abc9c"></button>
+        </div>
+      </div>
+      <div class="button-row">
+        <button id="headlightsBtn" class="toggle-btn">💡 Lights OFF</button>
+        <button id="rotateBtn" class="toggle-btn">🔄 Rotate</button>
+      </div>
+      <div class="button-row">
+        <button id="moveBtn" class="toggle-btn">🚗 Drive</button>
+      </div>
+    </div>
+
+    <a-scene
+      vr-mode-ui="enabled: false"
+      embedded
+      arjs="sourceType: webcam; debugUIEnabled: false;"
+      renderer="antialias: true; alpha: true; shadowMap.enabled: true; shadowMap.type: pcfsoft;"
+    >
+
+      <!-- Marker with correct GitHub raw URL -->
+      <a-marker type="pattern" url="https://raw.githubusercontent.com/Gitboi46/ar-car-demo/refs/heads/main/pattern-mark.patt">
+        
+        <!-- Car Container (for movement) -->
+        <a-entity id="car-container" position="0 0.02 0">
+          
+          <!-- 3D Car Model -->
+          <a-entity
+            id="car-model"
+            gltf-model="url(https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/CesiumMilkTruck/glTF/CesiumMilkTruck.gltf)"
+            scale="0.35 0.35 0.35"
+            position="0 0 0"
+            rotation="0 90 0"
+            shadow="cast: true; receive: false"
+          ></a-entity>
+
+          <!-- Added side mirrors for more detail -->
+          <a-box
+            position="-0.18 0.15 0.05"
+            scale="0.02 0.08 0.06"
+            material="color: #333333; metalness: 0.8; roughness: 0.2;"
+          ></a-box>
+          
+          <a-box
+            position="0.18 0.15 0.05"
+            scale="0.02 0.08 0.06"
+            material="color: #333333; metalness: 0.8; roughness: 0.2;"
+          ></a-box>
+
+          <!-- Added door handles -->
+          <a-box
+            position="-0.14 0.10 0.15"
+            scale="0.03 0.04 0.02"
+            material="color: #444444; metalness: 0.9;"
+          ></a-box>
+          
+          <a-box
+            position="-0.14 0.10 -0.05"
+            scale="0.03 0.04 0.02"
+            material="color: #444444; metalness: 0.9;"
+          ></a-box>
+
+          <!-- Added roof spoiler/detail -->
+          <a-box
+            position="0 0.22 -0.15"
+            scale="0.12 0.02 0.04"
+            material="color: #1a1a1a; metalness: 0.7;"
+          ></a-box>
+
+          <!-- Added bumpers for detail -->
+          <a-box
+            position="0 0.08 0.35"
+            scale="0.15 0.04 0.03"
+            material="color: #222222; metalness: 0.6;"
+          ></a-box>
+          
+          <a-box
+            position="0 0.08 -0.35"
+            scale="0.15 0.04 0.03"
+            material="color: #222222; metalness: 0.6;"
+          ></a-box>
+
+          <!-- Interior Components - stays black regardless of exterior color -->
+          <!-- Dashboard -->
+          <a-box
+            id="dashboard"
+            position="0 0.10 0.15"
+            scale="0.10 0.04 0.08"
+            material="color: #1a1a1a; metalness: 0.4; roughness: 0.8;"
+          ></a-box>
+
+          <!-- Front Seats (left and right) -->
+          <a-box
+            id="seat-left"
+            position="-0.08 0.08 0.12"
+            scale="0.08 0.06 0.06"
+            material="color: #2a2a2a; metalness: 0.2; roughness: 0.9;"
+          ></a-box>
+
+          <a-box
+            id="seat-right"
+            position="0.08 0.08 0.12"
+            scale="0.08 0.06 0.06"
+            material="color: #2a2a2a; metalness: 0.2; roughness: 0.9;"
+          ></a-box>
+
+          <!-- Steering Wheel -->
+          <a-torus
+            id="steering-wheel"
+            radius="0.04"
+            radius-tubular="0.01"
+            position="-0.02 0.12 0.18"
+            rotation="90 0 0"
+            material="color: #1a1a1a; metalness: 0.3; roughness: 0.7;"
+          ></a-torus>
+
+          <!-- Interior Roof -->
+          <a-box
+            id="interior-roof"
+            position="0 0.20 0.05"
+            scale="0.12 0.02 0.20"
+            material="color: #2a2a2a; metalness: 0.1; roughness: 0.9;"
+          ></a-box>
+
+          <!-- Front Headlight Bulbs (left) - SIDE POSITIONED -->
+          <a-sphere
+            id="headlight-bulb-left"
+            radius="0.025"
+            position="-0.22 0.12 0.05"
+            material="color: #ffff00; emissive: #ffff00; emissiveIntensity: 0; shader: standard; metalness: 0.8;"
+          ></a-sphere>
+          
+          <!-- Front Headlight Bulbs (right) - SIDE POSITIONED -->
+          <a-sphere
+            id="headlight-bulb-right"
+            radius="0.025"
+            position="0.22 0.12 0.05"
+            material="color: #ffff00; emissive: #ffff00; emissiveIntensity: 0; shader: standard; metalness: 0.8;"
+          ></a-sphere>
+
+          <!-- Headlight Spotlights - SIDE LIGHTS -->
+          <a-entity
+            id="headlight-left"
+            light="type: spot; intensity: 0; color: #ffffcc; angle: 50; penumbra: 0.3; distance: 5; decay: 2;"
+            position="-0.22 0.12 0.05"
+            rotation="0 -20 0"
+          ></a-entity>
+
+          <a-entity
+            id="headlight-right"
+            light="type: spot; intensity: 0; color: #ffffcc; angle: 50; penumbra: 0.3; distance: 5; decay: 2;"
+            position="0.22 0.12 0.05"
+            rotation="0 20 0"
+          ></a-entity>
+
+          <!-- Rear Lights (left) - SIDE POSITIONED -->
+          <a-sphere
+            id="rearlight-left"
+            radius="0.02"
+            position="-0.22 0.12 -0.15"
+            material="color: #ff0000; emissive: #ff0000; emissiveIntensity: 0; shader: standard;"
+          ></a-sphere>
+          
+          <!-- Rear Lights (right) - SIDE POSITIONED -->
+          <a-sphere
+            id="rearlight-right"
+            radius="0.02"
+            position="0.22 0.12 -0.15"
+            material="color: #ff0000; emissive: #ff0000; emissiveIntensity: 0; shader: standard;"
+          ></a-sphere>
+
+          <!-- Exhaust Smoke Particles - REAR of vehicle -->
+          <a-entity id="smoke-emitter" position="0 0.08 -0.38">
+            <a-sphere
+              class="smoke-particle"
+              radius="0.03"
+              material="color: #888888; transparent: true; opacity: 0;"
+              position="0 0 0"
+            ></a-sphere>
+          </a-entity>
+
+        </a-entity>
+
+        <!-- Ground Plane (for shadows) -->
+        <a-plane
+          position="0 0 0"
+          rotation="-90 0 0"
+          width="2"
+          height="2"
+          color="#888"
+          material="shader: standard; metalness: 0; roughness: 1;"
+          shadow="receive: true"
+        ></a-plane>
+      </a-marker>
+
+      <!-- Camera -->
+      <a-entity camera></a-entity>
+
+      <!-- Ambient Light -->
+      <a-entity light="type: ambient; intensity: 0.5; color: #ffffff"></a-entity>
+
+      <!-- Directional Light for Shadows -->
+      <a-entity
+        light="type: directional;
+               color: #ffffff;
+               intensity: 1.5;
+               castShadow: true;
+               shadowMapWidth: 2048;
+               shadowMapHeight: 2048;
+               shadowCameraNear: 0.1;
+               shadowCameraFar: 10;
+               shadowBias: -0.00005;"
+        position="1.5 2 1"
+        target="#car-model"
+      ></a-entity>
+
+      <!-- Hemisphere Light for Soft Illumination -->
+      <a-entity
+        light="type: hemisphere; intensity: 0.3; color: #ffffff; groundColor: #333333;"
+      ></a-entity>
+    </a-scene>
+
+    <script>
+      let headlightsOn = false;
+      let rotating = false;
+      let moving = false;
+      let rotationInterval = null;
+      let moveInterval = null;
+      let smokeInterval = null;
+      let wheelRotation = 0;
+
+      // Wait for the model to load
+      const carModel = document.getElementById('car-model');
+      const carContainer = document.getElementById('car-container');
+      let modelLoaded = false;
+      let wheels = [];
+
+      carModel.addEventListener('model-loaded', () => {
+        modelLoaded = true;
+        console.log('Car model loaded');
+        
+        // Find wheel meshes
+        const model = carModel.getObject3D('mesh');
+        if (model) {
+          model.traverse((node) => {
+            if (node.isMesh && node.material) {
+              const nodeName = node.name ? node.name.toLowerCase() : '';
+              const materialName = node.material.name ? node.material.name.toLowerCase() : '';
+              
+              // Make windows transparent
+              if (nodeName.includes('window') || nodeName.includes('glass') || 
+                  materialName.includes('window') || materialName.includes('glass')) {
+                node.material = node.material.clone();
+                node.material.transparent = true;
+                node.material.opacity = 0.3;
+                node.material.needsUpdate = true;
+              }
+              
+              // Find wheels for rotation
+              if (nodeName.includes('wheel') || nodeName.includes('tire')) {
+                wheels.push(node);
+              }
+            }
+          });
+        }
+      });
+
+      // Color change functionality
+      const colorButtons = document.querySelectorAll('.color-btn');
+      colorButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (!modelLoaded) return;
+          
+          const color = btn.dataset.color;
+          
+          colorButtons.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          
+          const model = carModel.getObject3D('mesh');
+          if (model) {
+            model.traverse((node) => {
+              if (node.isMesh && node.material) {
+                const materialName = node.material.name ? node.material.name.toLowerCase() : '';
+                const nodeName = node.name ? node.name.toLowerCase() : '';
+                
+                const isGlass = materialName.includes('glass') || materialName.includes('window') || 
+                               nodeName.includes('glass') || nodeName.includes('window');
+                const isTire = materialName.includes('tire') || materialName.includes('wheel') || 
+                              materialName.includes('rubber') || nodeName.includes('tire') || 
+                              nodeName.includes('wheel');
+                const isTransparent = node.material.transparent && node.material.opacity < 0.9;
+                const isInterior = nodeName.includes('dashboard') || nodeName.includes('seat') || 
+                                   nodeName.includes('steering-wheel') || nodeName.includes('interior-roof');
+                
+                if (!isGlass && !isTire && !isTransparent && !isInterior) {
+                  if (!node.material.userData.originalColor) {
+                    node.material = node.material.clone();
+                    node.material.userData.originalColor = node.material.color.getHex();
+                  }
+                  node.material.color.set(color);
+                  node.material.needsUpdate = true;
+                }
+              }
+            });
+          }
+          
+          const interiorElements = [
+            document.getElementById('dashboard'),
+            document.getElementById('seat-left'),
+            document.getElementById('seat-right'),
+            document.getElementById('steering-wheel'),
+            document.getElementById('interior-roof')
+          ];
+          
+          interiorElements.forEach(el => {
+            if (el && el.getAttribute('material')) {
+              el.setAttribute('material', 'color', '#1a1a1a');
+            }
+          });
+        });
+      });
+
+      // Headlights toggle
+      const headlightsBtn = document.getElementById('headlightsBtn');
+      const headlightLeft = document.getElementById('headlight-left');
+      const headlightRight = document.getElementById('headlight-right');
+      const headlightBulbLeft = document.getElementById('headlight-bulb-left');
+      const headlightBulbRight = document.getElementById('headlight-bulb-right');
+      const rearlightLeft = document.getElementById('rearlight-left');
+      const rearlightRight = document.getElementById('rearlight-right');
+
+      headlightsBtn.addEventListener('click', () => {
+        headlightsOn = !headlightsOn;
+        
+        const intensity = headlightsOn ? 2 : 0;
+        const emissiveIntensity = headlightsOn ? 3 : 0;
+        const rearEmissive = headlightsOn ? 2 : 0;
+        
+        // Update headlight spotlights
+        headlightLeft.setAttribute('light', 'intensity', intensity);
+        headlightRight.setAttribute('light', 'intensity', intensity);
+        
+        // Update headlight bulbs
+        headlightBulbLeft.setAttribute('material', 'emissiveIntensity', emissiveIntensity);
+        headlightBulbRight.setAttribute('material', 'emissiveIntensity', emissiveIntensity);
+        
+        // Update rear lights
+        rearlightLeft.setAttribute('material', 'emissiveIntensity', rearEmissive);
+        rearlightRight.setAttribute('material', 'emissiveIntensity', rearEmissive);
+        
+        headlightsBtn.textContent = headlightsOn ? '💡 Lights ON' : '💡 Lights OFF';
+        headlightsBtn.classList.toggle('active', headlightsOn);
+      });
+
+      // Rotation toggle
+      const rotateBtn = document.getElementById('rotateBtn');
+      rotateBtn.addEventListener('click', () => {
+        rotating = !rotating;
+        
+        if (rotating) {
+          rotateBtn.textContent = '⏸️ Stop';
+          rotateBtn.classList.add('active');
+          
+          let currentRotation = 90;
+          rotationInterval = setInterval(() => {
+            currentRotation += 1;
+            carContainer.setAttribute('rotation', `0 ${currentRotation} 0`);
+          }, 30);
+        } else {
+          rotateBtn.textContent = '🔄 Rotate';
+          rotateBtn.classList.remove('active');
+          
+          if (rotationInterval) {
+            clearInterval(rotationInterval);
+            rotationInterval = null;
+          }
+        }
+      });
+
+      // Move vehicle functionality
+      const moveBtn = document.getElementById('moveBtn');
+      const smokeEmitter = document.getElementById('smoke-emitter');
+      let smokeParticles = [];
+
+      moveBtn.addEventListener('click', () => {
+        moving = !moving;
+        
+        if (moving) {
+          moveBtn.textContent = '⏸️ Stop';
+          moveBtn.classList.add('active');
+          
+          let distance = 0;
+          let currentRotationY = 90; // Starting rotation
+          
+          moveInterval = setInterval(() => {
+            distance += 0.005;
+            if (distance > 0.5) distance = -0.5;
+            
+            // Convert rotation to radians
+            const radiansY = (currentRotationY * Math.PI) / 180;
+            
+            // Calculate X and Z based on rotation angle
+            const posX = Math.sin(radiansY) * distance;
+            const posZ = Math.cos(radiansY) * distance;
+            
+            carContainer.setAttribute('position', `${posX} 0.02 ${posZ}`);
+          }, 30);
+          
+          // Listen for rotation changes to update movement direction
+          const originalSetAttribute = carContainer.setAttribute;
+          carContainer.setAttribute = function(attr, val) {
+            if (attr === 'rotation') {
+              const rotArray = val.split(' ');
+              currentRotationY = parseFloat(rotArray[1]);
+            }
+            return originalSetAttribute.call(this, attr, val);
+          };
+          
+          // Smoke effect
+          smokeInterval = setInterval(() => {
+            createSmokeParticle();
+          }, 200);
+          
+        } else {
+          moveBtn.textContent = '🚗 Drive';
+          moveBtn.classList.remove('active');
+          
+          if (moveInterval) {
+            clearInterval(moveInterval);
+            moveInterval = null;
+          }
+          
+          if (smokeInterval) {
+            clearInterval(smokeInterval);
+            smokeInterval = null;
+          }
+        }
+      });
+
+      function createSmokeParticle() {
+        const particle = document.createElement('a-sphere');
+        particle.setAttribute('radius', '0.025');
+        particle.setAttribute('material', {
+          color: '#666666',
+          transparent: true,
+          opacity: 0.7,
+          metalness: 0,
+          roughness: 1
+        });
+        particle.setAttribute('position', '0 0 0');
+        
+        smokeEmitter.appendChild(particle);
+        
+        let opacity = 0.7;
+        let posY = 0;
+        let posZ = 0;
+        let scale = 1;
+        
+        const smokeAnim = setInterval(() => {
+          opacity -= 0.02;
+          posY += 0.015; // Upward
+          posZ -= 0.01; // Backward from rear
+          scale += 0.06;
+          
+          particle.setAttribute('position', `0 ${posY} ${posZ}`);
+          particle.setAttribute('scale', `${scale} ${scale} ${scale}`);
+          particle.setAttribute('material', 'opacity', opacity);
+          
+          if (opacity <= 0) {
+            clearInterval(smokeAnim);
+            smokeEmitter.removeChild(particle);
+          }
+        }, 50);
+      }
+    </script>
+  </body>
+</html>
